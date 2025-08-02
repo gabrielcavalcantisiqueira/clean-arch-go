@@ -23,3 +23,19 @@ services:
     environment:
       RABBITMQ_DEFAULT_USER: guest
       RABBITMQ_DEFAULT_PASS: guest
+
+  ordersystem:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: ordersystem
+    depends_on:
+      - mysql
+      - rabbitmq
+    ports:
+      - 8000:8000    # Web
+      - 50051:50051  # gRPC
+      - 8080:8080    # GraphQL
+    env_file:
+      - cmd/ordersystem/.env
+    restart: always
