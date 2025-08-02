@@ -10,10 +10,12 @@ import (
 	"github.com/99designs/gqlgen/graphql/playground"
 	"github.com/gabrielcavalcantisiqueira/clean-arch-go/configs"
 	"github.com/gabrielcavalcantisiqueira/clean-arch-go/internal/event/handler"
+	"github.com/gabrielcavalcantisiqueira/clean-arch-go/internal/infra/database"
 	"github.com/gabrielcavalcantisiqueira/clean-arch-go/internal/infra/graph"
 	"github.com/gabrielcavalcantisiqueira/clean-arch-go/internal/infra/grpc/pb"
 	"github.com/gabrielcavalcantisiqueira/clean-arch-go/internal/infra/grpc/service"
 	"github.com/gabrielcavalcantisiqueira/clean-arch-go/internal/infra/web/webserver"
+	"github.com/gabrielcavalcantisiqueira/clean-arch-go/internal/usecase"
 	"github.com/gabrielcavalcantisiqueira/clean-arch-go/pkg/events"
 	"github.com/streadway/amqp"
 	"google.golang.org/grpc"
@@ -43,6 +45,8 @@ func main() {
 	})
 
 	createOrderUseCase := NewCreateOrderUseCase(db, eventDispatcher)
+	orderRepository := database.NewOrderRepository(db)
+	listOrderUseCase := usecase.NewListOrderUseCase(orderRepository)
 
 	webserver := webserver.NewWebServer(configs.WebServerPort)
 	webOrderHandler := NewWebOrderHandler(db, eventDispatcher)
@@ -65,6 +69,7 @@ func main() {
 
 	srv := graphql_handler.NewDefaultServer(graph.NewExecutableSchema(graph.Config{Resolvers: &graph.Resolver{
 		CreateOrderUseCase: *createOrderUseCase,
+		ListOrdersUseCase:  *listOrderUseCase,
 	}}))
 	http.Handle("/", playground.Handler("GraphQL playground", "/query"))
 	http.Handle("/query", srv)
